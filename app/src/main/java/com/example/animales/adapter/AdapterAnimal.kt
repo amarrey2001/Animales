@@ -12,11 +12,13 @@ import com.example.animales.models.Animal
  * @param listaDeAnimales La lista de animales a mostrar.
  * @param onDelete Lambda que se ejecuta cuando se pulsa el botón de eliminar. Recibe la posición del elemento.
  * @param onEdit Lambda que se ejecuta cuando se pulsa el botón de editar. Recibe el objeto Animal a editar.
+ * @param onClick Lambda que se ejecuta cuando se pulsa el elemento. Recibe la posición del elemento.
  */
 class AdapterAnimal (
     private val listaDeAnimales: List<Animal>,
     private val onDelete: (Int) -> Unit,
-    private val onEdit: (Animal) -> Unit
+    private val onEdit: (Animal) -> Unit,
+    private val onClick: (Int) -> Unit
 
 ) : RecyclerView.Adapter<ViewHAnimal>() {
 
@@ -49,6 +51,11 @@ class AdapterAnimal (
         val animal = listaDeAnimales[position]
         // Renderiza los datos del animal en la vista
         holder.render(animal)
+        
+        holder.itemView.setOnClickListener {
+            onClick(position)
+        }
+        
         // Configura el listener para el botón de editar
         holder.binding.btnEdit.setOnClickListener {
             onEdit(animal)

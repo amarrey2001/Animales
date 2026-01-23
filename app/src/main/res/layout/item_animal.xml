@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/green">
+    android:background="@color/background_green">
 
     <androidx.cardview.widget.CardView
         android:id="@+id/cardView"
@@ -100,7 +100,7 @@
                     android:id="@+id/btn_edit"
                     android:layout_width="56dp"
                     android:layout_height="56dp"
-                    android:background="@drawable/button_grey_circle"
+                    android:background="@drawable/button_green_circle"
                     android:contentDescription="Editar"
                     android:src="@drawable/ic_pencil"
                     app:tint="@android:color/white" />

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/homeFragment">
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.example.animales.UI.HomeFragment"
+        android:label="Inicio"
+        tools:layout="@layout/fragment_home" />
+    <fragment
+        android:id="@+id/crudFragment"
+        android:name="com.example.animales.UI.CrudFragment"
+        android:label="Animales"
+        tools:layout="@layout/fragment_crud">
+        <action
+            android:id="@+id/action_crudFragment_to_detailFragment"
+            app:destination="@id/detailFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/detailFragment"
+        android:name="com.example.animales.UI.DetailFragment"
+        android:label="Detalle del Animal"
+        tools:layout="@layout/fragment_detail">
+        <argument
+            android:name="animalPosition"
+            app:argType="integer" />
+    </fragment>
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="com.example.animales.UI.SettingsFragment"
+        android:label="Ajustes"
+        tools:layout="@layout/fragment_settings" />
+</navigation>

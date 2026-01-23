@@ -1,114 +1,82 @@
-package com.example.animales // Asegúrate de que sea tu paquete
+package com.example.animales
 
+import android.content.Intent
 import android.os.Bundle
-import androidx.appcompat.app.AlertDialog
+import android.view.Menu
+import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.PagerSnapHelper
-import com.example.animales.UI.EditDialogFragment
-import com.example.animales.adapter.AdapterAnimal
-import com.example.animales.controller.Controller
+import androidx.core.view.GravityCompat
+import androidx.navigation.NavController
+import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.ui.*
 import com.example.animales.databinding.ActivityMainBinding
-import com.example.animales.models.Animal
-import com.example.animales.objects_models.Animales
 
-/**
- * Actividad principal de la aplicación.
- *
- * Muestra una lista horizontal de animales y permite al usuario añadir, editar y eliminar elementos.
- */
 class MainActivity : AppCompatActivity() {
-    // Objeto de View Binding para acceder a las vistas del layout de forma segura.
     private lateinit var binding: ActivityMainBinding
-    // Adaptador para el RecyclerView que gestiona la lista de animales.
-    private lateinit var adapter: AdapterAnimal
-    // Controlador que maneja la lógica de negocio (CRUD de animales).
-    private lateinit var controller: Controller
-    // Lista mutable que contiene los animales mostrados en el RecyclerView.
-    private var listaAnimales: MutableList<Animal> = mutableListOf()
+    private lateinit var navController: NavController
+    private lateinit var appBarConfiguration: AppBarConfiguration
 
-    /**
-     * Método que se llama al crear la actividad.
-     *
-     * @param savedInstanceState Estado previamente guardado de la actividad.
-     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Inicializa el controlador
-        controller = Controller(this)
+        setSupportActionBar(binding.toolbar)
 
-        // Carga la lista inicial de animales
-        listaAnimales = Animales.listaDeAnimales.toMutableList()
+        val navHostFragment = supportFragmentManager
+            .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        navController = navHostFragment.navController
 
-        // Configura el RecyclerView
-        setUpRecyclerView()
+        // Definimos los destinos de nivel superior (Top-level)
+        appBarConfiguration = AppBarConfiguration(
+            setOf(R.id.homeFragment, R.id.crudFragment, R.id.settingsFragment),
+            binding.drawerLayout
+        )
 
-        // Configura el botón para añadir un nuevo animal
-        binding.btnAniadir.setOnClickListener {
-            val animalVacio = Animal("", "", "", "")
+        // Vincular NavController con la Toolbar y el Navigation Drawer
+        setupActionBarWithNavController(navController, appBarConfiguration)
+        binding.navView.setupWithNavController(navController)
 
-            // Muestra un diálogo para editar/crear un animal.
-            // Al confirmar, se añade el nuevo animal a la lista.
-            val dialog = EditDialogFragment(animalVacio) { nuevoAnimal ->
-                controller.agregarAnimal(listaAnimales, nuevoAnimal)
-                val position = listaAnimales.size - 1
-                adapter.notifyItemInserted(position) // Notifica al adaptador sobre el nuevo elemento
-
-                binding.recyclerAnimales.scrollToPosition(position) // Desplaza la vista al nuevo animal
+        // Manejar el logout específicamente si se pulsa en el drawer
+        binding.navView.setNavigationItemSelectedListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.nav_logout -> {
+                    logout()
+                    true
+                }
+                else -> {
+                    val handled = NavigationUI.onNavDestinationSelected(menuItem, navController)
+                    if (handled) {
+                        binding.drawerLayout.closeDrawer(GravityCompat.START)
+                    }
+                    handled
+                }
             }
-
-            dialog.show(supportFragmentManager, "EditDialog")
         }
     }
 
-    /**
-     * Configura el RecyclerView, incluyendo el LayoutManager, el adaptador y el SnapHelper.
-     */
-    private fun setUpRecyclerView() {
-        // Configura un LayoutManager horizontal.
-        val layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
-        binding.recyclerAnimales.layoutManager = layoutManager
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.main_menu, menu)
+        return true
+    }
 
-        // Inicializa el adaptador con la lista de animales y las lambdas para editar/eliminar.
-        adapter = AdapterAnimal(
-            listaDeAnimales = listaAnimales,
-
-            // Lambda que se ejecuta al pulsar el botón de eliminar.
-            onDelete = { position ->
-                val animalAEliminar = listaAnimales[position]
-                AlertDialog.Builder(this)
-                    .setTitle("Confirmar borrado")
-                    .setMessage("¿Estás seguro de que quieres eliminar a ${animalAEliminar.nombre}?")
-                    .setPositiveButton("Aceptar") { _, _ ->
-                        controller.borrarAnimal(listaAnimales, position)
-                        adapter.notifyItemRemoved(position) // Notifica la eliminación
-                        adapter.notifyItemRangeChanged(position, listaAnimales.size) // Actualiza las posiciones
-                    }
-                    .setNegativeButton("Cancelar", null)
-                    .show()
-            },
-            // Lambda que se ejecuta al pulsar el botón de editar.
-            onEdit = { animalAEditar ->
-                val position = listaAnimales.indexOf(animalAEditar)
-
-                if (position != -1) {
-                    // Muestra el diálogo de edición con los datos del animal.
-                    val dialog = EditDialogFragment(animalAEditar) { nuevoAnimal ->
-                        controller.editarAnimal(listaAnimales, position, nuevoAnimal)
-                        adapter.notifyItemChanged(position) // Notifica que el elemento ha cambiado
-                    }
-                    dialog.show(supportFragmentManager, "EditDialog")
-                }
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.nav_logout -> {
+                logout()
+                true
             }
-        )
+            else -> item.onNavDestinationSelected(navController) || super.onOptionsItemSelected(item)
+        }
+    }
 
-        binding.recyclerAnimales.adapter = adapter
+    private fun logout() {
+        val intent = Intent(this, LoginActivity::class.java)
+        startActivity(intent)
+        finish()
+    }
 
-        // Añade un PagerSnapHelper para que el carrusel se centre en un elemento a la vez.
-        val snapHelper = PagerSnapHelper()
-        snapHelper.attachToRecyclerView(binding.recyclerAnimales)
+    override fun onSupportNavigateUp(): Boolean {
+        return navController.navigateUp(appBarConfiguration) || super.onSupportNavigateUp()
     }
 }
