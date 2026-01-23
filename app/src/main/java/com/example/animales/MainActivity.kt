@@ -27,15 +27,16 @@ class MainActivity : AppCompatActivity() {
             .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         navController = navHostFragment.navController
 
-        // Definimos los destinos de nivel superior (Top-level)
+        // Definimos los destinos de nivel superior (Top-level) comunes a ambos sistemas
         appBarConfiguration = AppBarConfiguration(
             setOf(R.id.homeFragment, R.id.crudFragment, R.id.settingsFragment),
             binding.drawerLayout
         )
 
-        // Vincular NavController con la Toolbar y el Navigation Drawer
+        // Vincular NavController con la Toolbar, el Navigation Drawer y el Bottom Navigation
         setupActionBarWithNavController(navController, appBarConfiguration)
         binding.navView.setupWithNavController(navController)
+        binding.bottomNav.setupWithNavController(navController)
 
         // Manejar el logout específicamente si se pulsa en el drawer
         binding.navView.setNavigationItemSelectedListener { menuItem ->
@@ -45,6 +46,7 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
                 else -> {
+                    // Para el resto de items, delegamos en NavigationUI
                     val handled = NavigationUI.onNavDestinationSelected(menuItem, navController)
                     if (handled) {
                         binding.drawerLayout.closeDrawer(GravityCompat.START)
@@ -77,6 +79,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onSupportNavigateUp(): Boolean {
+        // Importante usar la configuración para que el botón hamburguesa funcione correctamente
         return navController.navigateUp(appBarConfiguration) || super.onSupportNavigateUp()
     }
 }
