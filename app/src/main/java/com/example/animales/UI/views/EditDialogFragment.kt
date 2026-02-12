@@ -1,4 +1,4 @@
-package com.example.animales.UI
+package com.example.animales.UI.views
 
 import android.app.AlertDialog
 import android.app.Dialog
@@ -6,7 +6,7 @@ import android.os.Bundle
 import android.widget.EditText
 import androidx.fragment.app.DialogFragment
 import com.example.animales.R
-import com.example.animales.models.Animal
+import com.example.animales.domain.models.Animal
 
 /**
  * Un DialogFragment que muestra un formulario para editar o crear un animal.

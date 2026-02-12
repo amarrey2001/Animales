@@ -1,4 +1,4 @@
-package com.example.animales.UI
+package com.example.animales.UI.views
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -6,14 +6,15 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.PagerSnapHelper
-import com.example.animales.adapter.AdapterAnimal
-import com.example.animales.controller.Controller
+import com.example.animales.UI.adapter.AdapterAnimal
+import com.example.animales.UI.modelview.AnimalViewModel
 import com.example.animales.databinding.FragmentCrudBinding
-import com.example.animales.models.Animal
-import com.example.animales.objects_models.Animales
+import com.example.animales.domain.models.Animal
+import dagger.hilt.android.AndroidEntryPoint
 
 /**
  * Fragmento que muestra y gestiona la funcionalidad principal del CRUD de animales.
@@ -21,14 +22,14 @@ import com.example.animales.objects_models.Animales
  * Presenta una lista de animales en un carrusel horizontal (`RecyclerView`)
  * y permite al usuario añadir, editar y eliminar animales.
  */
+@AndroidEntryPoint
 class CrudFragment : Fragment() {
 
     private var _binding: FragmentCrudBinding? = null
     private val binding get() = _binding!!
 
     private lateinit var adapter: AdapterAnimal
-    private lateinit var controller: Controller
-    private var listaAnimales: MutableList<Animal> = mutableListOf()
+    private val viewModel: AnimalViewModel by viewModels()
 
     /**
      * Infla la vista del fragmento y configura el View Binding.
@@ -51,17 +52,16 @@ class CrudFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        controller = Controller(requireContext())
-        listaAnimales = Animales.listaDeAnimales.toMutableList()
         setUpRecyclerView()
+
+        viewModel.animales.observe(viewLifecycleOwner) { animales ->
+            adapter.updateList(animales)
+        }
 
         binding.btnAniadir.setOnClickListener {
             val animalVacio = Animal("", "", "", "")
             val dialog = EditDialogFragment(animalVacio) { nuevoAnimal ->
-                controller.agregarAnimal(listaAnimales, nuevoAnimal)
-                val position = listaAnimales.size - 1
-                adapter.notifyItemInserted(position)
-                binding.recyclerAnimales.scrollToPosition(position)
+                viewModel.addAnimal(nuevoAnimal)
             }
             dialog.show(parentFragmentManager, "EditDialog")
         }
@@ -78,26 +78,25 @@ class CrudFragment : Fragment() {
         binding.recyclerAnimales.layoutManager = layoutManager
 
         adapter = AdapterAnimal(
-            listaDeAnimales = listaAnimales,
+            listaDeAnimales = mutableListOf(),
             onDelete = { position ->
-                val animalAEliminar = listaAnimales[position]
-                AlertDialog.Builder(requireContext())
-                    .setTitle("Confirmar borrado")
-                    .setMessage("¿Estás seguro de que quieres eliminar a ${animalAEliminar.nombre}?")
-                    .setPositiveButton("Aceptar") { _, _ ->
-                        controller.borrarAnimal(listaAnimales, position)
-                        adapter.notifyItemRemoved(position)
-                        adapter.notifyItemRangeChanged(position, listaAnimales.size)
-                    }
-                    .setNegativeButton("Cancelar", null)
-                    .show()
+                val animalAEliminar = viewModel.animales.value?.getOrNull(position)
+                if (animalAEliminar != null) {
+                    AlertDialog.Builder(requireContext())
+                        .setTitle("Confirmar borrado")
+                        .setMessage("¿Estás seguro de que quieres eliminar a ${animalAEliminar.nombre}?")
+                        .setPositiveButton("Aceptar") { _, _ ->
+                            viewModel.deleteAnimal(position)
+                        }
+                        .setNegativeButton("Cancelar", null)
+                        .show()
+                }
             },
             onEdit = { animalAEditar ->
-                val position = listaAnimales.indexOf(animalAEditar)
+                val position = viewModel.animales.value?.indexOf(animalAEditar) ?: -1
                 if (position != -1) {
                     val dialog = EditDialogFragment(animalAEditar) { nuevoAnimal ->
-                        controller.editarAnimal(listaAnimales, position, nuevoAnimal)
-                        adapter.notifyItemChanged(position)
+                        viewModel.updateAnimal(position, nuevoAnimal)
                     }
                     dialog.show(parentFragmentManager, "EditDialog")
                 }
